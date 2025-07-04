@@ -1,0 +1,107 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the dataset
+df = pd.read_csv('MultipleFiles/Unemployment in India.csv')
+
+# Data Cleaning and Preprocessing
+df.columns = df.columns.str.strip()
+df.columns = df.columns.str.replace(' ', '_')
+df.columns = df.columns.str.replace('_(%)', '', regex=False)
+df.columns = df.columns.str.replace('.', '', regex=False)
+
+df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
+df['Region'] = df['Region'].astype('category')
+df['Frequency'] = df['Frequency'].astype('category')
+df['Area'] = df['Area'].astype('category')
+
+# Extract month and year for trend analysis
+df['Month'] = df['Date'].dt.month
+df['Month_int'] = df['Month'].apply(lambda x: int(x))
+df['Month_name'] = df['Date'].dt.strftime('%b')
+df['Year'] = df['Date'].dt.year
+
+# Drop unnecessary columns
+df.drop(columns='Month', inplace=True)
+
+# Impute missing values (if any, though not explicitly stated as a problem in this dataset)
+# For numerical columns, mean imputation is a common approach
+for col in ['Estimated_Unemployment_Rate', 'Estimated_Employed', 'Estimated_Labour_Participation_Rate']:
+    if df[col].isnull().any():
+        df[col] = df[col].fillna(df[col].mean())
+
+# For categorical columns, mode imputation is common
+for col in ['Region', 'Frequency', 'Area']:
+    if df[col].isnull().any():
+        df[col] = df[col].fillna(df[col].mode()[0])
+
+# Data Exploration and Visualization
+
+# Overall Unemployment Rate Trend
+plt.figure(figsize=(12, 6))
+sns.lineplot(data=df, x='Date', y='Estimated_Unemployment_Rate')
+plt.title('Overall Unemployment Rate Trend in India')
+plt.xlabel('Date')
+plt.ylabel('Estimated Unemployment Rate (%)')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# Impact of Covid-19 (April-May 2020)
+# Assuming Covid-19 impact is most visible from April 2020 onwards
+df_covid = df[(df['Date'] >= '2020-03-01') & (df['Date'] <= '2020-06-30')]
+
+plt.figure(figsize=(14, 7))
+sns.lineplot(data=df_covid, x='Date', y='Estimated_Unemployment_Rate', hue='Region', marker='o')
+plt.title('Unemployment Rate During Early Covid-19 Period (March-June 2020)')
+plt.xlabel('Date')
+plt.ylabel('Estimated Unemployment Rate (%)')
+plt.xticks(rotation=45)
+plt.grid(True)
+plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+plt.tight_layout()
+plt.show()
+
+# Regional Unemployment Rates
+plt.figure(figsize=(16, 8))
+sns.barplot(data=df, x='Region', y='Estimated_Unemployment_Rate', ci=None, palette='viridis')
+plt.title('Average Unemployment Rate by Region')
+plt.xlabel('Region')
+plt.ylabel('Average Estimated Unemployment Rate (%)')
+plt.xticks(rotation=90)
+plt.tight_layout()
+plt.show()
+
+# Seasonal Trends (Monthly Average)
+plt.figure(figsize=(12, 6))
+sns.barplot(data=df, x='Month_name', y='Estimated_Unemployment_Rate', ci=None, palette='magma', order=df['Month_name'].unique())
+plt.title('Average Unemployment Rate by Month (Seasonal Trend)')
+plt.xlabel('Month')
+plt.ylabel('Average Estimated Unemployment Rate (%)')
+plt.tight_layout()
+plt.show()
+
+# Unemployment Rate by Area (Rural vs Urban)
+plt.figure(figsize=(10, 6))
+sns.boxplot(data=df, x='Area', y='Estimated_Unemployment_Rate', palette='pastel')
+plt.title('Unemployment Rate Distribution by Area (Rural vs Urban)')
+plt.xlabel('Area')
+plt.ylabel('Estimated Unemployment Rate (%)')
+plt.tight_layout()
+plt.show()
+
+# Insights and Policy Implications
+print("\n--- Key Insights ---")
+print("1. Overall Trend: The unemployment rate shows fluctuations over time, with a significant spike observed around April-May 2020, coinciding with the initial phase of the Covid-19 pandemic and associated lockdowns.")
+print("2. Covid-19 Impact: The data clearly indicates a sharp increase in unemployment rates across many regions during the early months of the pandemic (March-June 2020), highlighting the immediate economic disruption caused by the crisis.")
+print("3. Regional Disparities: There are notable differences in unemployment rates across various regions, suggesting that economic vulnerabilities and resilience vary geographically. Some states consistently show higher or lower rates than the national average.")
+print("4. Seasonal Patterns: Monthly analysis reveals some seasonal trends in unemployment, which could be linked to agricultural cycles, festival seasons, or academic calendars affecting labor participation.")
+print("5. Rural vs. Urban: The distribution of unemployment rates between rural and urban areas provides insights into the structural differences in employment opportunities and labor market dynamics in these two settings.")
+
+print("\n--- Policy Implications ---")
+print("1. Targeted Interventions: Policies aimed at job creation and economic recovery should be region-specific, considering the unique challenges and opportunities in different states.")
+print("2. Disaster Preparedness: The sharp rise during Covid-19 underscores the need for robust social safety nets and economic stimulus packages to mitigate the impact of future crises on employment.")
+print("3. Skill Development: Investing in skill development programs tailored to the demands of both rural and urban economies can enhance employability and reduce structural unemployment.")
+print("4. Support for Vulnerable Sectors: Identifying sectors and demographics most affected by unemployment (e.g., informal sector workers, specific age groups) can help in designing targeted support programs.")
+print("5. Data-Driven Policy Making: Continuous monitoring and analysis of unemployment data are crucial for timely policy adjustments and effective resource allocation.")
